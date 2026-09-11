@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>03 · 以后的你</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="future">
+
+  <div class="lock-screen" id="lockScreen">
+    <div class="lock-box">
+      <div class="lock-mark">· · ·</div>
+      <p class="lock-title">这里有一些话，<br>只想给一个人看。</p>
+      <form class="lock-form" autocomplete="off">
+        <input class="lock-input" type="password" inputmode="numeric" placeholder="请输入密码" autocomplete="off">
+        <button class="lock-submit" type="submit">进入</button>
+        <div class="lock-error"></div>
+      </form>
+      <div class="lock-hint">你应该知道这个数字。</div>
+    </div>
+  </div>
+
+  <div class="letter">
+    <div class="letter-nav-top"><a class="back-link" href="index.html">← 返回</a></div>
+
+    <div class="letter-head reveal">
+      <div class="letter-num" id="letterNum"></div>
+      <h1 class="letter-title" id="letterTitle"></h1>
+      <p class="letter-sub" id="letterSub"></p>
+      <div class="letter-rule bead-row"><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+
+    <div class="letter-body" id="letterBody"></div>
+
+    <div class="timeline reveal" id="timeline"></div>
+
+    <div class="letter-nav-bottom" id="navWrap">
+      <a class="nav-prev"></a>
+      <a class="nav-next"></a>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
