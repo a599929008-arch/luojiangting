@@ -10,6 +10,9 @@
   const page = document.body.getAttribute("data-page");
   let SITE = null;
   let PAGE_META = {};
+  let bgmAudio = null;      // 背景音乐（initBGM 里赋值）
+  let bgmUserPaused = false; // 用户是否主动用 ♪ 关掉了音乐
+  let voicePlaying = 0;      // 正在播放的语音条数量
 
   function isUnlocked() {
     return localStorage.getItem("bday_unlocked") === "1";
@@ -216,13 +219,77 @@
     observeReveal();
   }
 
+  /* ---------- 背景音乐（content.json 的 site.bgm 填了文件名才启用） ---------- */
+  function initBGM() {
+    const src = SITE.site && SITE.site.bgm;
+    if (!src) return;
+
+    const audio = new Audio(src);
+    audio.loop = true;
+    audio.volume = 0.35;
+    audio.preload = "auto";
+    bgmAudio = audio;
+
+    let btn;
+
+    function setBtn(playing) {
+      if (btn) btn.classList.toggle("playing", playing);
+    }
+
+    function tryPlay() {
+      audio.play().then(() => setBtn(true)).catch(() => setBtn(false));
+    }
+
+    // 右上角音符开关
+    btn = document.createElement("button");
+    btn.className = "bgm-btn";
+    btn.type = "button";
+    btn.setAttribute("aria-label", "音乐开关");
+    btn.textContent = "♪";
+    btn.addEventListener("click", () => {
+      if (audio.paused) {
+        bgmUserPaused = false;
+        tryPlay();
+      } else {
+        bgmUserPaused = true;
+        audio.pause();
+      }
+    });
+    document.body.appendChild(btn);
+
+    // 跨页续播：记住进度
+    function saveTime() {
+      if (!audio.paused) {
+        try { localStorage.setItem("bgm_time", String(audio.currentTime)); } catch (e) {}
+      }
+    }
+    setInterval(saveTime, 1000);
+    window.addEventListener("beforeunload", saveTime);
+    try {
+      const t = parseFloat(localStorage.getItem("bgm_time"));
+      if (!isNaN(t) && t > 0) audio.currentTime = t;
+    } catch (e) {}
+
+    // 尝试自动播放；被浏览器拦住就等第一次触摸页面时响起
+    tryPlay();
+    function firstTouch() {
+      document.removeEventListener("pointerdown", firstTouch);
+      if (audio.paused && !bgmUserPaused && voicePlaying === 0) tryPlay();
+    }
+    document.addEventListener("pointerdown", firstTouch);
+  }
+
   function initSecret() {
     const s = SITE.secret;
     document.getElementById("secretIntro").textContent = s.intro;
 
-    // 语音条：content.json 里配了 voices 才显示，一条一个卡片
-    const voices = s.voices || [];
-    if (voices.length) {
+    // 语音条：输入彩蛋①密码成功后才显示，一条一个卡片
+    let voicesShown = false;
+    function renderVoices() {
+      if (voicesShown) return;
+      voicesShown = true;
+      const voices = s.voices || [];
+      if (!voices.length) return;
       const inner = document.querySelector(".secret-inner");
       const firstEgg = inner.querySelector(".egg");
       voices.forEach((v) => {
@@ -236,10 +303,25 @@
         audio.controls = true;
         audio.preload = "none";
         audio.src = v.src;
+        // 加载提示：网络慢时告诉人不是坏了
+        audio.addEventListener("waiting", () => { label.textContent = (v.label || "· · ·") + "（加载中…）"; });
+        audio.addEventListener("playing", () => { label.textContent = v.label || "· · ·"; });
+        // 播放语音时暂停 BGM，暂停/播完后自动续播
+        audio.addEventListener("play", () => {
+          voicePlaying++;
+          if (bgmAudio && !bgmAudio.paused) bgmAudio.pause();
+        });
+        audio.addEventListener("pause", () => {
+          voicePlaying = Math.max(0, voicePlaying - 1);
+          if (voicePlaying === 0 && bgmAudio && bgmAudio.paused && !bgmUserPaused) {
+            bgmAudio.play().catch(() => {});
+          }
+        });
         card.appendChild(label);
         card.appendChild(audio);
         inner.insertBefore(card, firstEgg);
       });
+      observeReveal();
     }
 
     // 彩蛋1：密码
@@ -252,6 +334,7 @@
       if ((input.value || "").trim() === String(s.password)) {
         reveal1.textContent = s.passwordMessage;
         reveal1.classList.add("show");
+        renderVoices();
       } else {
         input.value = "";
         input.placeholder = "再想想？";
@@ -317,6 +400,7 @@
         SITE = data;
         PAGE_META = {};
         SITE.index.entries.forEach((e) => (PAGE_META[e.id] = e));
+        initBGM();
         setupLock();
       })
       .catch(() => {

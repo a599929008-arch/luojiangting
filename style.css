@@ -121,9 +121,9 @@ body{ animation:pageIn .55s var(--bounce) both; }
 .cover-open:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--pink-deep); }
 
 /* ---------- 首页：目录 ---------- */
-.directory{ min-height:100vh; padding:80px 20px 64px; display:flex; flex-direction:column; align-items:center; }
+.directory{ min-height:100vh; padding:20px 20px; display:flex; flex-direction:column; justify-content:center; align-items:center; }
 .directory[hidden]{ display:none; }
-.directory-title{ font-family:var(--display); font-size:14px; color:var(--ink-soft); margin-bottom:40px; }
+.directory-title{ font-family:var(--display); font-size:14px; color:var(--ink-soft); margin-bottom:28px; }
 .entry-list{ width:100%; max-width:480px; display:flex; flex-direction:column; gap:14px; }
 .entry-row{
   display:flex; align-items:center; gap:16px;
@@ -146,11 +146,13 @@ body{ animation:pageIn .55s var(--bounce) both; }
 .entry-row:hover .entry-arrow{ transform:translateX(4px); color:var(--pink); }
 
 .ps-link{
-  margin-top:56px; font-size:12px; color:var(--ink-faint);
-  cursor:pointer; padding:6px 14px; border-radius:999px;
-  transition:background .2s, color .2s;
+  margin-top:48px; font-family:var(--display); font-size:15px; color:var(--pink-deep);
+  background:var(--card); border:2px solid var(--pink); border-radius:999px;
+  padding:12px 36px; cursor:pointer; box-shadow:0 4px 0 rgba(255,61,130,.18);
+  transition:transform .18s var(--bounce), box-shadow .18s var(--bounce);
 }
-.ps-link:hover{ background:var(--card); color:var(--pink-deep); }
+.ps-link:hover{ transform:translateY(-2px); }
+.ps-link:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(255,61,130,.18); }
 
 /* ---------- 信件页公共布局 ---------- */
 .letter{ min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:0 20px 72px; }
@@ -272,3 +274,15 @@ body{ animation:pageIn .55s var(--bounce) both; }
 .voice-egg{ text-align:center; }
 .voice-label{ font-family:var(--display); font-size:15px; color:var(--ink); margin-bottom:14px; line-height:1.7; }
 .voice-egg audio{ width:100%; max-width:320px; border-radius:12px; outline:none; }
+
+/* ---------- 背景音乐开关（右上角小音符） ---------- */
+.bgm-btn{
+  position:fixed; top:14px; right:14px; z-index:90;
+  width:38px; height:38px; border-radius:50%;
+  border:2px solid var(--pink); background:var(--card); color:var(--pink-deep);
+  font-size:16px; line-height:1; cursor:pointer;
+  box-shadow:0 3px 0 rgba(255,61,130,.18);
+  display:flex; align-items:center; justify-content:center;
+}
+.bgm-btn.playing{ animation:bgmSpin 3s linear infinite; }
+@keyframes bgmSpin{ to{ transform:rotate(360deg); } }
