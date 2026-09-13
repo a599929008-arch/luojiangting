@@ -106,7 +106,8 @@ body{ animation:pageIn .55s var(--bounce) both; }
 .lock-hint{ margin-top:18px; font-size:12px; color:var(--ink-soft); }
 
 /* ---------- 首页：封面 ---------- */
-.cover{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px; text-align:center; }
+.cover{ min-height:100vh; min-height:100svh; display:flex; align-items:center; justify-content:center; padding:32px; text-align:center; }
+.cover[hidden]{ display:none; }
 .cover-inner{ max-width:380px; }
 .cover-to{ font-family:var(--display); font-size:16px; color:var(--pink-deep); margin-bottom:14px; }
 .cover-date{ font-size:13px; letter-spacing:.15em; color:var(--ink-soft); margin-bottom:34px; }
@@ -121,7 +122,7 @@ body{ animation:pageIn .55s var(--bounce) both; }
 .cover-open:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--pink-deep); }
 
 /* ---------- 首页：目录 ---------- */
-.directory{ min-height:100vh; padding:20px 20px; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+.directory{ min-height:100vh; min-height:100svh; padding:20px 20px; display:flex; flex-direction:column; justify-content:center; align-items:center; }
 .directory[hidden]{ display:none; }
 .directory-title{ font-family:var(--display); font-size:14px; color:var(--ink-soft); margin-bottom:28px; }
 .entry-list{ width:100%; max-width:480px; display:flex; flex-direction:column; gap:14px; }
