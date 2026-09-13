@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>生日网站 · 本地内容后台</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root{
+    --bg:#FFF3F8; --bg-deep:#FFE3EE; --card:#FFFFFF;
+    --pink:#FF6FA0; --pink-deep:#FF3D82;
+    --ink:#6B4457; --ink-soft:#A9808F;
+    --line:rgba(107,68,87,.16);
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft YaHei","PingFang SC",sans-serif; font-size:14px; }
+
+  /* 密码门 */
+  #gate{ position:fixed; inset:0; z-index:99; background:var(--bg-deep);
+    display:flex; align-items:center; justify-content:center; padding:24px; }
+  #gate .box{ width:100%; max-width:320px; background:var(--card);
+    border-radius:24px; padding:36px 28px; text-align:center;
+    border:3px solid var(--pink); box-shadow:0 6px 0 rgba(255,61,130,.18); }
+  #gate h1{ font-size:18px; margin:0 0 6px; }
+  #gate p{ font-size:12px; color:var(--ink-soft); margin:0 0 22px; }
+  #gate input{ width:100%; text-align:center; border-radius:14px; padding:12px;
+    background:var(--bg); border:2px solid var(--line); font-size:18px;
+    letter-spacing:.3em; outline:none; }
+  #gate input:focus{ border-color:var(--pink); }
+  #gate button{ margin-top:14px; background:var(--pink); border:none; color:#fff;
+    padding:11px 34px; border-radius:999px; font-size:14px; cursor:pointer;
+    box-shadow:0 4px 0 var(--pink-deep); }
+  #gate .err{ min-height:16px; font-size:12px; color:var(--pink-deep); margin-top:10px; }
+
+  /* 顶栏 */
+  header{ position:sticky; top:0; z-index:10; background:var(--card);
+    border-bottom:2px solid var(--line); padding:12px 16px;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  header .title{ font-weight:bold; font-size:15px; flex:1; }
+  .btn{ background:var(--pink); color:#fff; border:none; border-radius:999px;
+    padding:9px 18px; font-size:13px; cursor:pointer; box-shadow:0 3px 0 var(--pink-deep); }
+  .btn:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--pink-deep); }
+  .btn.ghost{ background:#fff; color:var(--ink-soft); border:2px solid var(--line); box-shadow:none; }
+
+  #toast{ position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(80px);
+    background:var(--ink); color:#fff; padding:10px 20px; border-radius:999px;
+    font-size:13px; opacity:0; transition:all .35s; z-index:50; pointer-events:none; max-width:90vw; }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  main{ max-width:760px; margin:0 auto; padding:18px 16px 90px; }
+  .help{ background:var(--bg-deep); border:2px dashed var(--pink); border-radius:16px;
+    padding:14px 16px; font-size:13px; line-height:1.9; margin-bottom:20px; }
+  .help b{ color:var(--pink-deep); }
+
+  details.sec{ background:var(--card); border:2px solid var(--line); border-radius:18px;
+    margin-bottom:14px; overflow:hidden; }
+  details.sec summary{ cursor:pointer; padding:14px 18px; font-size:15px; font-weight:bold;
+    list-style:none; user-select:none; }
+  details.sec summary::-webkit-details-marker{ display:none; }
+  details.sec summary::after{ content:"▾"; float:right; color:var(--ink-soft); }
+  details.sec[open] summary::after{ content:"▴"; }
+  details.sec .inner{ padding:4px 18px 18px; border-top:2px solid var(--line); }
+
+  .field{ margin-top:14px; }
+  .field label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:5px; }
+  .field input[type=text], .field textarea, .field select{
+    width:100%; border:2px solid var(--line); border-radius:12px; background:var(--bg);
+    padding:9px 12px; font-size:14px; color:var(--ink); outline:none; font-family:inherit; }
+  .field input:focus, .field textarea:focus{ border-color:var(--pink); }
+  .field textarea{ resize:vertical; min-height:70px; line-height:1.7; }
+  .field input[readonly]{ color:var(--ink-soft); background:var(--bg-deep); }
+
+  .list{ border:2px dashed var(--line); border-radius:14px; padding:12px; margin-top:6px; }
+  .list .item{ background:var(--bg); border:2px solid var(--line); border-radius:12px;
+    padding:10px 12px; margin-bottom:10px; position:relative; }
+  .list .item .del{ position:absolute; top:8px; right:8px; background:none; border:none;
+    color:var(--pink-deep); font-size:12px; cursor:pointer; }
+  .list .item .field{ margin-top:10px; }
+  .list .item .field:first-child{ margin-top:0; }
+  .add{ width:100%; border:2px dashed var(--pink); background:none; color:var(--pink-deep);
+    border-radius:12px; padding:9px; font-size:13px; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- 密码门 -->
+<div id="gate">
+  <div class="box">
+    <h1>🔒 内容后台</h1>
+    <p>生日网站 · 本地编辑器</p>
+    <form id="gateForm" autocomplete="off">
+      <input id="gateInput" type="password" inputmode="numeric" placeholder="请输入后台密码">
+      <button type="submit">进入</button>
+      <div class="err" id="gateErr"></div>
+    </form>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <span class="title">📝 生日网站内容后台</span>
+    <label class="btn ghost" style="display:inline-block;">导入 content.json
+      <input id="importFile" type="file" accept=".json,application/json" style="display:none;">
+    </label>
+    <button class="btn" id="exportBtn">导出并下载 ⬇</button>
+  </header>
+
+  <main>
+    <div class="help">
+      <b>怎么用（三步）：</b><br>
+      1️⃣ 在下面像填表格一样改字、加语音条<br>
+      2️⃣ 点右上角「导出并下载」，得到新的 <b>content.json</b><br>
+      3️⃣ 打开 GitHub 仓库 → <b>Add file → Upload files</b> → 拖入这个 content.json → Commit changes，约 1 分钟后网站自动更新<br><br>
+      <b>🎵 加语音条：</b>先把录音文件上传到 GitHub 仓库（建议命名 voice1.mp3、voice2.mp3），再在「彩蛋页」最下面的「彩蛋语音条」里添加：标题 + 文件名，导出上传后手机就能听到了。
+    </div>
+    <div id="sections"></div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<!-- 内置当前内容（双击打开时的初始数据） -->
+<script type="application/json" id="seed">
+{
+  "site": { "password": "0813", "toName": "XXX", "date": "2026-XX-XX", "fromName": "XXX", "bgm": "" },
+  "index": {
+    "tagline": "有一些话，我想留在这里给你。",
+    "openButton": "打开这份礼物",
+    "entries": [
+      { "id": "past", "num": "01", "title": "以前的你", "subtitle": "写给那个我曾经认识的你。" },
+      { "id": "present", "num": "02", "title": "现在的你", "subtitle": "写给那个重新出现在我生活里的你。" },
+      { "id": "future", "num": "03", "title": "以后的你", "subtitle": "写给不知道什么时候会再次看到这封信的你。" },
+      { "id": "words", "num": "04", "title": "我想对你说", "subtitle": "这一页没有主题。" },
+      { "id": "birthday", "num": "05", "title": "生日快乐", "subtitle": "" }
+    ]
+  },
+  "past": { "num": "01", "title": "以前的你", "subtitle": "写给那个我曾经认识的你。",
+    "paragraphs": [ "【我们是什么时候认识的】", "【第一次见面】", "【我当时对你的第一印象】", "【什么时候开始喜欢你】", "【那时候的你是什么样】", "【那时候的我是什么样】", "【我们曾经发生过什么】", "【我现在还记得什么】", "【当时没有说出口的话】", "【关于 2018 年的最后一段记忆】" ],
+    "closingLine1": "2018", "closingLine2": "我们曾经很靠近。" },
+  "present": { "num": "02", "title": "现在的你", "subtitle": "写给那个重新出现在我生活里的你。",
+    "paragraphs": [ "【高铁站那一天】", "【我为什么突然想起你】", "【我为什么给你发短信】", "【短信发出去之后的感觉】", "【重新加回微信的感觉】", "【第一次重新聊天的感觉】", "【现在的你和以前有什么不一样】", "【重新认识你以后，我发现了什么】", "【那些深夜聊天】", "【让我记住的一句话】" ],
+    "chatLog": [] },
+  "future": { "num": "03", "title": "以后的你", "subtitle": "写给不知道什么时候会再次看到这封信的你。",
+    "paragraphs": [ "【不知道几年以后你会是什么样】", "【那时候的你在哪里】", "【那时候的我在哪里】", "【如果你以后重新打开这个网页】", "【我希望你过得怎么样】", "【我希望你成为怎样的人】", "【如果你现在过得很好】", "【如果你现在过得不太好】", "【我想对未来的你说】" ],
+    "timeline": [ { "year": "2026", "note": "" }, { "year": "2027", "note": "" }, { "year": "2028", "note": "" }, { "year": "2029", "note": "" }, { "year": "2030", "note": "" } ] },
+  "words": { "num": "04", "title": "我想对你说", "subtitle": "这一页没有主题。",
+    "paragraphs": [ "【这里填写真正想说的话，可以写很长很长，不用分段太多次，想到哪写到哪】" ] },
+  "birthday": { "num": "05", "lead1": "今天不说以前了。", "lead2": "今天只是想认真地祝你——", "lead3": "生日快乐。",
+    "paragraphs": [ "【希望你今年……】", "【希望你以后……】", "【希望你能够……】", "【希望你遇到……】", "【希望你永远……】", "【我最想给你的祝福……】" ],
+    "closing": "愿你以后每一年的今天，都有人记得认真祝你生日快乐。" },
+  "secret": {
+    "intro": "你以为这就是全部了吗？",
+    "passwordHint": "请输入一个只有我们知道的答案。",
+    "password": "请在此处填写你们的专属答案",
+    "passwordMessage": "【密码正确后显示的隐藏文字】",
+    "beadCaption": "戳一戳这颗豆子。",
+    "beadStory": "【戳开豆子后想说的话】",
+    "midnightTime": "03:17",
+    "midnightMessage": "【这里填写关于深夜聊天的话】",
+    "hiddenMessage": "【这里填写连续点击后出现的隐藏内容】",
+    "finalTeaser": "其实还有一句话。",
+    "finalMessage": "【这里填写最终想说的话】",
+    "voices": []
+  }
+}
+</script>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================
+     后台密码：只保护这个编辑器，想改就改下面这行
+     ============================================ */
+  var ADMIN_PASSWORD = "0813";
+
+  /* ---------- 表单结构定义 ---------- */
+  var SCHEMA = [
+    { key: "site", title: "🔒 网站设置", fields: [
+      { n: "password", l: "进入网站的密码" },
+      { n: "toName",   l: "封面 TO 后面的称呼" },
+      { n: "date",     l: "封面日期（如 2026-08-13）" },
+      { n: "fromName", l: "落款名字" },
+      { n: "bgm",      l: "🎵 背景音乐文件名（先把音乐文件上传到 GitHub 仓库，如 BGM.mp3；留空 = 没有音乐）" }
+    ]},
+    { key: "index", title: "🏠 首页：封面与目录", fields: [
+      { n: "tagline",    l: "封面那句话" },
+      { n: "openButton", l: "打开礼物的按钮文字" },
+      { n: "entries",    l: "目录五封信（id 列不要改）", t: "objlist", f: [
+        { n: "id",       l: "id（不要改）", lock: true },
+        { n: "num",      l: "编号" },
+        { n: "title",    l: "标题" },
+        { n: "subtitle", l: "副标题" }
+      ]}
+    ]},
+    { key: "past", title: "💌 01 以前的你", fields: [
+      { n: "num", l: "编号" }, { n: "title", l: "标题" }, { n: "subtitle", l: "副标题" },
+      { n: "paragraphs", l: "正文段落（一段一格）", t: "strlist" },
+      { n: "closingLine1", l: "结尾第一行" },
+      { n: "closingLine2", l: "结尾第二行" }
+    ]},
+    { key: "present", title: "💌 02 现在的你", fields: [
+      { n: "num", l: "编号" }, { n: "title", l: "标题" }, { n: "subtitle", l: "副标题" },
+      { n: "paragraphs", l: "正文段落（一段一格）", t: "strlist" },
+      { n: "chatLog", l: "聊天记录（可选，不填不显示）", t: "objlist", f: [
+        { n: "sender", l: "发送方（me=我 / her=她）", t: "select", o: ["me", "her"] },
+        { n: "text",   l: "内容" }
+      ]}
+    ]},
+    { key: "future", title: "💌 03 以后的你", fields: [
+      { n: "num", l: "编号" }, { n: "title", l: "标题" }, { n: "subtitle", l: "副标题" },
+      { n: "paragraphs", l: "正文段落（一段一格）", t: "strlist" },
+      { n: "timeline", l: "未来时间轴", t: "objlist", f: [
+        { n: "year", l: "年份" },
+        { n: "note", l: "备注" }
+      ]}
+    ]},
+    { key: "words", title: "💌 04 我想对你说", fields: [
+      { n: "num", l: "编号" }, { n: "title", l: "标题" }, { n: "subtitle", l: "副标题" },
+      { n: "paragraphs", l: "正文（可以写很长）", t: "strlist" }
+    ]},
+    { key: "birthday", title: "🎂 05 生日快乐", fields: [
+      { n: "num",   l: "编号" },
+      { n: "lead1", l: "引导句 1" },
+      { n: "lead2", l: "引导句 2" },
+      { n: "lead3", l: "引导句 3（生日快乐那句）" },
+      { n: "paragraphs", l: "祝福段落（一段一格）", t: "strlist" },
+      { n: "closing", l: "结尾祝福语" }
+    ]},
+    { key: "secret", title: "🥚 彩蛋页（含语音条）", fields: [
+      { n: "intro",           l: "开场白" },
+      { n: "passwordHint",    l: "彩蛋①提示语" },
+      { n: "password",        l: "彩蛋①密码" },
+      { n: "passwordMessage", l: "彩蛋①解锁后内容", t: "area" },
+      { n: "beadCaption",     l: "彩蛋②提示语（戳豆子）" },
+      { n: "beadStory",       l: "彩蛋②内容", t: "area" },
+      { n: "midnightTime",    l: "彩蛋③时间显示（如 03:17）" },
+      { n: "midnightMessage", l: "彩蛋③内容", t: "area" },
+      { n: "hiddenMessage",   l: "彩蛋④内容（连续点击后）", t: "area" },
+      { n: "finalTeaser",     l: "彩蛋⑤引子" },
+      { n: "finalMessage",    l: "彩蛋⑤最终内容", t: "area" },
+      { n: "voices", l: "🎵 彩蛋语音条（先上传音频到 GitHub 仓库，这里填文件名）", t: "objlist", f: [
+        { n: "label", l: "标题（显示在语音上方）" },
+        { n: "src",   l: "文件名（如 voice1.mp3，如果放在 audio 文件夹就写 audio/voice1.mp3）" }
+      ]}
+    ]}
+  ];
+
+  var data = null;
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function () { t.classList.remove("show"); }, 2800);
+  }
+
+  function ensureArr(obj, key) {
+    if (!Array.isArray(obj[key])) obj[key] = [];
+    return obj[key];
+  }
+
+  /* ---------- 普通字段 ---------- */
+  function buildField(parent, schema, get, set) {
+    var wrap = el("div", "field");
+    wrap.appendChild(el("label", null, schema.l));
+    var input;
+    if (schema.t === "area") {
+      input = document.createElement("textarea");
+    } else if (schema.t === "select") {
+      input = document.createElement("select");
+      schema.o.forEach(function (op) {
+        var opt = document.createElement("option");
+        opt.value = op; opt.textContent = op === "me" ? "me（我发的）" : "her（她发的）";
+        input.appendChild(opt);
+      });
+    } else {
+      input = document.createElement("input");
+      input.type = "text";
+    }
+    if (schema.lock) input.setAttribute("readonly", "");
+    input.value = get() === undefined || get() === null ? "" : get();
+    input.addEventListener("input", function () { set(input.value); });
+    wrap.appendChild(input);
+    parent.appendChild(wrap);
+    return input;
+  }
+
+  /* ---------- 文本列表（段落） ---------- */
+  function buildStrList(parent, schema, arr) {
+    var box = el("div", "list");
+    function render() {
+      box.innerHTML = "";
+      arr.forEach(function (val, i) {
+        var item = el("div", "item");
+        var del = el("button", "del", "✕ 删除");
+        del.type = "button";
+        del.addEventListener("click", function () { arr.splice(i, 1); render(); });
+        item.appendChild(del);
+        var ta = document.createElement("textarea");
+        ta.value = val || "";
+        ta.addEventListener("input", function () { arr[i] = ta.value; });
+        item.appendChild(ta);
+        box.appendChild(item);
+      });
+      var add = el("button", "add", "＋ 添加一段");
+      add.type = "button";
+      add.addEventListener("click", function () { arr.push(""); render(); });
+      box.appendChild(add);
+    }
+    render();
+    parent.appendChild(box);
+  }
+
+  /* ---------- 对象列表（目录 / 聊天 / 时间轴 / 语音） ---------- */
+  function buildObjList(parent, schema, arr) {
+    var box = el("div", "list");
+    function render() {
+      box.innerHTML = "";
+      arr.forEach(function (obj, i) {
+        var item = el("div", "item");
+        var del = el("button", "del", "✕ 删除");
+        del.type = "button";
+        del.addEventListener("click", function () { arr.splice(i, 1); render(); });
+        item.appendChild(del);
+        schema.f.forEach(function (fs) {
+          buildField(item, fs,
+            function () { return obj[fs.n]; },
+            function (v) { obj[fs.n] = v; });
+        });
+        box.appendChild(item);
+      });
+      var add = el("button", "add", "＋ 添加一条");
+      add.type = "button";
+      add.addEventListener("click", function () {
+        var fresh = {};
+        schema.f.forEach(function (fs) { fresh[fs.n] = fs.t === "select" ? schema.f[0].o[0] : ""; });
+        arr.push(fresh);
+        render();
+      });
+      box.appendChild(add);
+    }
+    render();
+    parent.appendChild(box);
+  }
+
+  /* ---------- 渲染所有分区 ---------- */
+  function renderAll() {
+    var root = document.getElementById("sections");
+    root.innerHTML = "";
+    SCHEMA.forEach(function (sec) {
+      var d = el("details", "sec");
+      d.open = true;
+      d.appendChild(el("summary", null, sec.title));
+      var inner = el("div", "inner");
+      d.appendChild(inner);
+      var obj = data[sec.key];
+      if (!obj) { data[sec.key] = {}; obj = data[sec.key]; }
+      sec.fields.forEach(function (fs) {
+        if (fs.t === "strlist") {
+          var wrap = el("div", "field");
+          wrap.appendChild(el("label", null, fs.l));
+          inner.appendChild(wrap);
+          buildStrList(wrap, fs, ensureArr(obj, fs.n));
+        } else if (fs.t === "objlist") {
+          var wrap2 = el("div", "field");
+          wrap2.appendChild(el("label", null, fs.l));
+          inner.appendChild(wrap2);
+          buildObjList(wrap2, fs, ensureArr(obj, fs.n));
+        } else {
+          buildField(inner, fs,
+            function () { return obj[fs.n]; },
+            function (v) { obj[fs.n] = v; });
+        }
+      });
+      root.appendChild(d);
+    });
+  }
+
+  /* ---------- 导入 / 导出 ---------- */
+  function loadData(obj) {
+    if (!obj || typeof obj !== "object" || !obj.site) {
+      toast("文件格式不对，没导入成功");
+      return;
+    }
+    // 兼容旧版 content.json：补上 bgm 字段
+    if (typeof obj.site.bgm === "undefined") obj.site.bgm = "";
+    data = obj;
+    renderAll();
+    saveLocal();
+    toast("已载入 content.json");
+  }
+
+  /* ---------- 本地自动保存：改过的内容存在浏览器里，下次打开不丢 ---------- */
+  function saveLocal() {
+    try { localStorage.setItem("bday_admin_data", JSON.stringify(data)); } catch (e) {}
+  }
+  setInterval(saveLocal, 3000);
+  window.addEventListener("beforeunload", saveLocal);
+
+  document.getElementById("importFile").addEventListener("change", function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try { loadData(JSON.parse(reader.result)); }
+      catch (err) { toast("这个文件不是有效的 JSON，没法导入"); }
+    };
+    reader.readAsText(file, "utf-8");
+    e.target.value = "";
+  });
+
+  document.getElementById("exportBtn").addEventListener("click", function () {
+    if (!data) return;
+    saveLocal();
+    var blob = new Blob([JSON.stringify(data, null, 2) + "\n"], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "content.json";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    toast("已导出 content.json，记得上传到 GitHub 仓库替换旧文件");
+  });
+
+  /* ---------- 密码门 ---------- */
+  document.getElementById("gateForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var input = document.getElementById("gateInput");
+    if ((input.value || "").trim() === String(ADMIN_PASSWORD)) {
+      document.getElementById("gate").style.display = "none";
+      document.getElementById("app").hidden = false;
+      try { sessionStorage.setItem("bday_admin_ok", "1"); } catch (err) {}
+    } else {
+      document.getElementById("gateErr").textContent = "密码不对，再想想。";
+      input.value = "";
+    }
+  });
+
+  /* ---------- 初始化 ---------- */
+  (function init() {
+    try { if (sessionStorage.getItem("bday_admin_ok") === "1") { document.getElementById("gate").style.display = "none"; document.getElementById("app").hidden = false; } } catch (err) {}
+
+    var seed = {};
+    try { seed = JSON.parse(document.getElementById("seed").textContent); } catch (err) {}
+    data = seed;
+
+    // 双击打开（file://）时优先用浏览器里记住的上次内容；没有就用内置数据
+    if (location.protocol === "http:" || location.protocol === "https:") {
+      fetch("content.json?_=" + Date.now())
+        .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+        .then(loadData)
+        .catch(function () { loadLocalOrSeed(); });
+    } else {
+      loadLocalOrSeed();
+    }
+
+    function loadLocalOrSeed() {
+      try {
+        var saved = localStorage.getItem("bday_admin_data");
+        if (saved) {
+          var obj = JSON.parse(saved);
+          if (obj && obj.site) {
+            data = obj;
+            renderAll();
+            return;
+          }
+        }
+      } catch (err) {}
+      renderAll();
+    }
+  })();
+})();
+</script>
+</body>
+</html>

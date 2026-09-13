@@ -28,6 +28,9 @@
       return;
     }
 
+    // HTML 里密码门默认隐藏，未解锁时再显示（避免已解锁时闪现）
+    lock.removeAttribute("hidden");
+
     const form = lock.querySelector(".lock-form");
     const input = lock.querySelector(".lock-input");
     const error = lock.querySelector(".lock-error");
