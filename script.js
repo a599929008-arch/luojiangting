@@ -220,6 +220,28 @@
     const s = SITE.secret;
     document.getElementById("secretIntro").textContent = s.intro;
 
+    // 语音条：content.json 里配了 voices 才显示，一条一个卡片
+    const voices = s.voices || [];
+    if (voices.length) {
+      const inner = document.querySelector(".secret-inner");
+      const firstEgg = inner.querySelector(".egg");
+      voices.forEach((v) => {
+        if (!v || !v.src) return;
+        const card = document.createElement("div");
+        card.className = "egg voice-egg reveal";
+        const label = document.createElement("div");
+        label.className = "voice-label";
+        label.textContent = v.label || "· · ·";
+        const audio = document.createElement("audio");
+        audio.controls = true;
+        audio.preload = "none";
+        audio.src = v.src;
+        card.appendChild(label);
+        card.appendChild(audio);
+        inner.insertBefore(card, firstEgg);
+      });
+    }
+
     // 彩蛋1：密码
     document.getElementById("egg1Hint").textContent = s.passwordHint;
     const form1 = document.getElementById("egg1Form");

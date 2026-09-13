@@ -267,3 +267,8 @@ body{ animation:pageIn .55s var(--bounce) both; }
   .entry-title{ font-size:16px; }
   .bday-lead p.final{ font-size:24px; }
 }
+
+/* ---------- 彩蛋页：语音条（content.json 配了 voices 才出现） ---------- */
+.voice-egg{ text-align:center; }
+.voice-label{ font-family:var(--display); font-size:15px; color:var(--ink); margin-bottom:14px; line-height:1.7; }
+.voice-egg audio{ width:100%; max-width:320px; border-radius:12px; outline:none; }
